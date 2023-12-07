@@ -1,5 +1,5 @@
-var search_api = "https://nasuni-searchfunction-app-333c.azurewebsites.net/api/search" ; 
-var volume_api = "https://nasuni-searchfunction-app-333c.azurewebsites.net/api/get_volume" ; 
+var search_api = "https://nasuni-searchfunction-app-ae20.azurewebsites.net/api/search" ; 
+var volume_api = "https://nasuni-searchfunction-app-ae20.azurewebsites.net/api/get_volume" ; 
 var prevSearch=""
 var nextSearch=""
 var currentSearch=""
@@ -41,16 +41,37 @@ searchbox.keyup(function() {
 function dropDownData(period) {
     volSelect = ""
     volume = period;
-    console.log(period);
+    console.log(period ,"and its subsequent sso-url is:",ssoData[volume]);
     if (searchbox.val() != "") {
         search();
     }
+    if (ssoData[volume]!="undefined"){
+        ssoTrigger(ssoData[volume])
+    }
+    
 }
 
 function paginationData(period) {
     pagiResults = period;
     console.log(pagiResults + "   pagination page number");
     indexChange();
+}
+
+
+function ssoTrigger(url) {
+    let newWindow = window.open(url, "_blank", "width=0,height=0,top=0,left=0");
+
+  // Set a timeout to close the window after 30 seconds
+  setTimeout(() => {
+    newWindow.close();
+  }, 30000);
+
+  // Check the URL status and log it to the console after the window is closed
+  newWindow.addEventListener("beforeunload", () => {
+    fetch(url)
+      .then((response) => response.status)
+      .then((status) => console.log(`URL status: ${status}`));
+  });
 }
 
 async function search() {
@@ -281,6 +302,10 @@ function getHostname(res){
     hostNames=res
 }
 
+function ssoGet(res){
+    ssoData=res
+}
+
 //Appending all the results to the main resultdiv 
 function appendData(resultdiv, data) 
 {
@@ -311,7 +336,7 @@ function appendData(resultdiv, data)
                 if(erpFuncResponse!=null)
                 {
                     file_url=file_Share_url
-                    file_loc=file_Share_url.trim().replace(/ /g,'%20');
+                    file_loc=fileShareRedirectionUrl.trim().replace(/ /g,'%20');
                     sharePathExist=true
                     break
                 }
@@ -379,12 +404,13 @@ function extractRightPath(mainString, sharePath, fileLocation) {
     let matchString=mainString.replace(/%20/g,' ');
     const match = regex.exec(matchString);
     let filerIp=fileLocation.split('/')[2]
+    let hostName=hostNames[filerIp] || filerIp
     
     if (match) {
-      rightPart = match[2].trim();
-      console.log(rightPart)
-        
-        file_Share_url="https://"+filerIp+"/fs/view/"+shareName+rightPart
+        rightPart = match[2].trim();
+        console.log(rightPart)
+        fileShareRedirectionUrl="https://"+filerIp+"/fs/view/"+shareName+rightPart
+        file_Share_url="https://"+hostName+"/fs/view/"+shareName+rightPart
         return true
     }
   
